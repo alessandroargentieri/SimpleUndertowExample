@@ -1,5 +1,6 @@
 package com.quicktutorialz.nio.handlers;
 
+import com.quicktutorialz.nio.custom.observables.Flowable;
 import com.quicktutorialz.nio.model.Person;
 import com.quicktutorialz.nio.utils.JsonConverter;
 import io.reactivex.Observable;
@@ -55,14 +56,24 @@ public class DoBusinessLogicHandler  implements HttpHandler {
                 .subscribe(t -> sendResponse(exchange, json.getJsonOf(t)));*/
 
         /* RxJava another more reactive version */
-        Observable.fromCallable(()->(Person) getJsonResponseBody(exchange, Person.class))
+        /*Observable.fromCallable(()->(Person) getJsonResponseBody(exchange, Person.class))
                 .map(p -> transform(p))
+                .subscribe(t -> sendResponse(exchange, json.getJsonOf(t)));*/
+
+        /* My Custom version of RxJava RxJava another more reactive version */
+        new Flowable().just(()-> getJsonResponseBody(exchange, Person.class))
+                .map(p->transform((Person) p))
                 .subscribe(t -> sendResponse(exchange, json.getJsonOf(t)));
     }
 
-    private Object getJsonResponseBody(HttpServerExchange exchange, Class clazz) throws IOException {
-        String requestBody = getRequestBody(exchange);
-        return json.getObjectFromJson(requestBody, clazz);
+    private Object getJsonResponseBody(HttpServerExchange exchange, Class clazz){
+        try {
+            String requestBody = getRequestBody(exchange);
+            return json.getObjectFromJson(requestBody, clazz);
+        }catch(IOException e){
+            exchange.getResponseSender().send(e.toString());
+        }
+        return null;
     }
 
     /* it extract the body of the request */
