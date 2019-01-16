@@ -15,7 +15,7 @@ public class MainApplication {
      */
     public static void helloWorldHandler(HttpServerExchange exchange) {
         exchange.getResponseHeaders().add(Headers.CONTENT_TYPE, "text/plain");
-        exchange.getResponseSender().send("Hello World!");
+        exchange.getResponseSender().send("Hello World!" + exchange.getRequestPath());
     }
 
     public static void main(String[] args) {

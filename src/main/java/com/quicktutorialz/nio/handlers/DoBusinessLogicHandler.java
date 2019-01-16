@@ -2,6 +2,7 @@ package com.quicktutorialz.nio.handlers;
 
 import com.quicktutorialz.nio.model.Person;
 import com.quicktutorialz.nio.utils.JsonConverter;
+import io.reactivex.Observable;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.Headers;
@@ -27,25 +28,41 @@ public class DoBusinessLogicHandler  implements HttpHandler {
             return;
         }
 
-        String requestBody = getRequestBody(exchange);
-
         /* FIRST ALTERNATIVE:
         you can call the business logic directly because the whole body of handleRequest() is managed reactively
          */
-        Person person = (Person) json.getObjectFromJson(requestBody, Person.class);
-        Person p = transform(person);
-        sendResponse(exchange, json.getJsonOf(p));
+        //String requestBody = getRequestBody(exchange);
+        //Person person = (Person) json.getObjectFromJson(requestBody, Person.class);
+        //Person p = transform(person);
+        //sendResponse(exchange, json.getJsonOf(p));
 
 
         /* SECOND ALTERNATIVE: not working
         you must wrap business logic within a reactive construction (RxJava, CompletableFuture, ecc.) in order to
         have all the stack reactive
          */
-        /*CompletableFuture
+        /*
+        String requestBody = getRequestBody(exchange);
+        CompletableFuture
                 .supplyAsync(()-> (Person) json.getObjectFromJson(requestBody, Person.class))
                 .thenApply(p -> transform(p))
                 .thenAccept(p -> sendResponse(exchange, json.getJsonOf(p)));*/
 
+        /* RxJava works fine */
+        /*String requestBody = getRequestBody(exchange);
+        Observable.fromCallable(()->(Person) json.getObjectFromJson(requestBody, Person.class))
+                .map(p -> transform(p))
+                .subscribe(t -> sendResponse(exchange, json.getJsonOf(t)));*/
+
+        /* RxJava another more reactive version */
+        Observable.fromCallable(()->(Person) getJsonResponseBody(exchange, Person.class))
+                .map(p -> transform(p))
+                .subscribe(t -> sendResponse(exchange, json.getJsonOf(t)));
+    }
+
+    private Object getJsonResponseBody(HttpServerExchange exchange, Class clazz) throws IOException {
+        String requestBody = getRequestBody(exchange);
+        return json.getObjectFromJson(requestBody, clazz);
     }
 
     /* it extract the body of the request */
